@@ -6,7 +6,7 @@ import chisel3.util._
 import chisel3.iotesters.{PeekPokeTester, Driver, ChiselFlatSpec}
 
 class ALU_2Tests(c: ALU_2) extends PeekPokeTester(c) {			// se define la clase donde se instancia la ALU, se definen las entradas y el comportamiento esperado
-	def alu(RST: UInt, clk: UInt, op_1: UInt, inmediato: UInt, reg_2: UInt, Imm_ID: UInt, op_ID: UInt, esp_ID: UInt, alu_out: UInt, out_comp: UInt, out_OK: UInt) = {
+	def alu(RST: UInt, clk: UInt, op_1: UInt, inmediato: UInt, reg_2: UInt, Imm_ID: UInt, op_ID: UInt, esp_ID: UInt, alu_out: UInt, out_comp: UInt, out_OK: UInt, selector_cp: UInt/*, salida_arit: UInt*/) = {
 			poke(c.io.RST, RST)
 			poke(c.io.clk, clk)
 			poke(c.io.op_1, op_1)
@@ -17,11 +17,13 @@ class ALU_2Tests(c: ALU_2) extends PeekPokeTester(c) {			// se define la clase d
 			poke(c.io.esp_ID, esp_ID)
 			expect(c.io.alu_out, alu_out)
 			expect(c.io.out_comp, out_comp)
-			step(1)
+			//step(1)
 			//expect(c.io.out_COUT, out_COUT)
 			expect(c.io.out_OK, out_OK)
+			expect(c.io.selector_cp, selector_cp)
+			//expect(c.io.salida_arit, salida_arit)
 		}
-		alu(/*reset*/0.U,/*clk*/0.U,/*op_1*/3.U,/*inmediato*/4.U,/*reg2*/3.U,/*Imm_ID*/"b0110011".U,/*op_ID*/"b111".U,/*esp_ID*/"b00".U,/*alu_out*/1.U,/*out_comp*/0.U,/*out_OK*/0.U)
+		alu(/*reset*/0.U,/*clk*/0.U,/*op_1*/10.U,/*inmediato*/4.U,/*reg2*/1.U,/*Imm_ID*/51.U,/*op_ID*/"b101".U,/*esp_ID*/"b00".U,/*alu_out*/5.U,/*out_comp*/0.U,/*out_OK*/0.U,/*selector_cp*/3.U)
 	}
 
 class ALU_2Tester extends ChiselFlatSpec {

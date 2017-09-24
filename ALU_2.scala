@@ -55,21 +55,18 @@ class Deco_salida extends Module {
 		  }.otherwise {						//->op aritmetica
 			  io.out := 0.U
 		  }
-	  }
-	  when(io.op_ID === 1.U | io.op_ID === 5.U){ //op comp o desplazamiento
+	  }.elsewhen(io.op_ID === 1.U | io.op_ID === 5.U) { //op comp o desplazamiento
 		  io.EN_Shift := 0.U  				//Mantener apagados los shft
 		  when(io.ID_imm === 99.U) {		//->op de comp
 			  io.out := 1.U
-		  }.otherwise {						//->op desplazamiento
-			  io.EN_Shift := 1.U
-			  io.out := 4.U
+		  }.otherwise {	
+			  io.out := 3.U					//->op desplazamiento
+			  io.EN_Shift := 1.U 
 		  }
-	  }
-	  when(io.op_ID === 2.U | io.op_ID === 3.U) {	//op comp 
+	  }.elsewhen(io.op_ID === 2.U | io.op_ID === 3.U) {	//op comp 
 		  io.EN_Shift := 0.U  				//Mantener apagados los shft	
 		  io.out := 1.U
-	  }
-	  when(io.op_ID === 4.U | io.op_ID === 6.U | io.op_ID === 7.U) {				//op comp o logica
+	  }.elsewhen(io.op_ID === 4.U | io.op_ID === 6.U | io.op_ID === 7.U) {				//op comp o logica
 		  io.EN_Shift := 0.U  				//Mantener apagados los shft
 		  when(io.ID_imm === 99.U) {		//->op de comp
 			  io.out := 1.U
@@ -250,17 +247,9 @@ class Shift extends Module {
 //-------------------------- Multiplexado --------------------------
 //------------------------------------------------------------------
 
-class Mux2 extends Module {
-  val io = IO(new Bundle {
-    val sel = Input(UInt(1.W))
-    val in0 = Input(UInt(32.W))
-    val in1 = Input(UInt(32.W))
-    val out = Output(UInt(32.W))
-  })
-  io.out := (io.sel & io.in1) | (~io.sel & io.in0)
-}
 class Mux4 extends Module {
-  val io = IO(new Bundle {   
+  val io = IO(new Bundle {
+	val RST = Input(UInt(1.W))     
     val in0 = Input(UInt(32.W))
     val in1 = Input(UInt(32.W))
     val in2 = Input(UInt(32.W))
@@ -268,23 +257,19 @@ class Mux4 extends Module {
     val sel = Input(UInt(2.W))
     val out = Output(UInt(32.W))
   })
-  
-  val m0 = Module(new Mux2())
-  m0.io.sel := io.sel(0)
-  m0.io.in0 := io.in0
-  m0.io.in1 := io.in1
-
-  val m1 = Module(new Mux2())
-  m1.io.sel := io.sel(0)
-  m1.io.in0 := io.in2
-  m1.io.in1 := io.in3
-  
-  val m2 = Module(new Mux2())
-  m2.io.sel := io.sel(1)
-  m2.io.in0 := m0.io.out
-  m2.io.in1 := m1.io.out
-  
-  io.out := m2.io.out
+  when(io.RST === 1.U) {
+	  io.out := 0.U
+  }.otherwise {
+	  when(io.sel === 0.U) {
+		  io.out := io.in0
+	  }.elsewhen(io.sel === 1.U) {
+		  io.out := io.in1
+	  }.elsewhen(io.sel === 2.U) {
+		  io.out := io.in2
+	  }.otherwise {
+		  io.out := io.in3
+	  }
+  }
 }
   
 //----------------------------------------------------------------
@@ -304,12 +289,14 @@ class ALU_2 extends Module {
 		val out_comp = Output(UInt(1.W))
 		//val out_COUT = Output(UInt(1.W)) 
 		val out_OK = Output(UInt(1.W))
+		val selector_cp = Output(UInt(2.W))
+		//val salida_arit = Output(UInt(32.W))
 	})
 	when(io.RST===1.U) {
 		//io.alu_out := 0.U
 		io.out_comp := 0.U
 		io.out_OK := 0.U
-	}
+	}.otherwise {
 	//Instanciar el decodificador de operandos
 	val deco_ops = Module(new Deco_OP())
 	deco_ops.io.RST := io.RST
@@ -380,6 +367,9 @@ class ALU_2 extends Module {
 	m4.io.in3 := desplazar.io.out
 	m4.io.sel := deco_out.io.out
 	io.alu_out := m4.io.out 
+	io.selector_cp := m4.io.sel
+	//io.salida_arit := m4.io.in0
+}
 }
 
 object ALU_2Driver extends App {
