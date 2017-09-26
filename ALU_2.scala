@@ -226,7 +226,28 @@ class Shift extends Module {
 	  io.out := 0.U
 	  io.out_ready := 0.U
   }.otherwise {
-  when(io.EN === 1.U && io.clk === 1.U) {
+	  val bus = Wire(UInt(32.W))
+	  val regO = RegNext(bus)
+	  val regS = RegNext(io.in0)
+	  val regD = RegNext(io.in1)
+	  io.out := regO
+	  //io.in0 := regS
+	  when(io.EN === 1.U) {
+		  io.out_ready := 0.U
+		  when(io.ID_OP === 5.U) {
+			  io.out := /*regS*/io.in0 >> io.in1/*regD*/
+			  io.out_ready := 1.U
+		  }.otherwise {
+			  io.out := io.in0 << regD
+			  io.out_ready := 1.U
+		}
+		//io.out := regO
+	  }.otherwise {
+		  io.out := 0.U
+		  io.out_ready := 1.U
+	  }
+	  	
+  /*when(io.EN === 1.U && io.clk === 1.U) {
 	  io.out_ready := 0.U
   when(io.ID_OP === 5.U) {
 	  when(io.ID_ESP === 0.U) {
@@ -240,7 +261,7 @@ class Shift extends Module {
 	  io.out := io.in0 << io.in1
 	  io.out_ready := 1.U
   }
-  }
+  }*/
 }
 }
 //------------------------------------------------------------------

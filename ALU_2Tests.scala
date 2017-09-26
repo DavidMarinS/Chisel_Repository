@@ -23,7 +23,7 @@ class ALU_2Tests(c: ALU_2) extends PeekPokeTester(c) {			// se define la clase d
 			expect(c.io.selector_cp, selector_cp)
 			//expect(c.io.salida_arit, salida_arit)
 		}
-		alu(/*reset*/0.U,/*clk*/0.U,/*op_1*/10.U,/*inmediato*/4.U,/*reg2*/1.U,/*Imm_ID*/51.U,/*op_ID*/"b101".U,/*esp_ID*/"b00".U,/*alu_out*/5.U,/*out_comp*/0.U,/*out_OK*/0.U,/*selector_cp*/3.U)
+		alu(/*reset*/0.U,/*clk*/0.U,/*op_1*/"b1010".U,/*inmediato*/1.U,/*reg2*/2.U,/*Imm_ID*/51.U,/*op_ID*/"b101".U,/*esp_ID*/"b00".U,/*alu_out*/5.U,/*out_comp*/0.U,/*out_OK*/0.U,/*selector_cp*/3.U)
 	}
 
 class ALU_2Tester extends ChiselFlatSpec {
