@@ -123,8 +123,7 @@ class logic extends Module {
   }.otherwise {
   when(io.ID_OP === 7.U) {
 	  io.out := io.in0 & io.in1
-  }
-  when(io.ID_OP === 4.U) {
+  }.elsewhen(io.ID_OP === 4.U) {
 	  io.out := io.in0 ^ io.in1 //(a & ~b) | (~a & b)
   }.otherwise {
 	  io.out := io.in0 | io.in1
@@ -214,7 +213,7 @@ class Shift extends Module {
 	val io = IO(new Bundle {
 	  val RST = Input(UInt(1.W))		//Reset
 	  val EN = Input(UInt(1.W))			//habilitador de shift
-	  val clk = Input(UInt(1.W))		//entrada de reloj
+	  //val clk = Input(UInt(1.W))		//entrada de reloj
       val in0 = Input(UInt(32.W))		// entrada del operando1
       val in1 = Input(UInt(5.W)) 		// Ultimos 5 bits del operando 2
       val ID_OP = Input(UInt(3.W))		//Identificador de operacion
@@ -228,8 +227,8 @@ class Shift extends Module {
   }.otherwise {
 	  val bus = Wire(UInt(32.W))
 	  val regO = RegNext(bus)
-	  val regS = RegNext(io.in0)
-	  val regD = RegNext(io.in1)
+	  //val regS = RegNext(io.in0)
+	  //val regD = RegNext(io.in1)
 	  io.out := regO
 	  //io.in0 := regS
 	  when(io.EN === 1.U) {
@@ -238,7 +237,7 @@ class Shift extends Module {
 			  io.out := /*regS*/io.in0 >> io.in1/*regD*/
 			  io.out_ready := 1.U
 		  }.otherwise {
-			  io.out := io.in0 << regD
+			  io.out := io.in0 << io.in1
 			  io.out_ready := 1.U
 		}
 		//io.out := regO
@@ -299,13 +298,14 @@ class Mux4 extends Module {
 class ALU_2 extends Module {
 	val io = IO(new Bundle {
 		val RST = Input(UInt(1.W))
-		val clk = Input(UInt(1.W))
+		//val clk = Input(UInt(1.W))
 		val op_1 = Input(UInt(32.W))
 		val inmediato = Input(UInt(32.W))
 		val reg_2 = Input(UInt(32.W))
-		val Imm_ID = Input(UInt(7.W))
+		val Deco_Instruc = Input(UInt(12.W))
+		/*val Imm_ID = Input(UInt(7.W))
 		val op_ID = Input(UInt(3.W))
-		val esp_ID = Input(UInt(2.W))
+		val esp_ID = Input(UInt(2.W))*/
 		val alu_out = Output(UInt(32.W))
 		val out_comp = Output(UInt(1.W))
 		//val out_COUT = Output(UInt(1.W)) 
@@ -325,7 +325,7 @@ class ALU_2 extends Module {
 	//deco_ops.io.in_Imm_S := io.inmediato
 	deco_ops.io.in_reg2 := io.reg_2
 	//deco_ops.io.in_reg2_S := io.reg_2
-	deco_ops.io.ID_imm := io.Imm_ID
+	deco_ops.io.ID_imm := Cat(io.Deco_Instruc(6,0))
 	//deco_ops.io.in_reg2 := io.reg_2
 	
 	//Instanciar Unidad aritmetica
@@ -334,7 +334,7 @@ class ALU_2 extends Module {
 	arit_unit.io.in0 := io.op_1
 	arit_unit.io.in1 := deco_ops.io.out
 	//arit_unit.io.ID_OP := io.op_ID
-	arit_unit.io.ID_ESP := io.esp_ID
+	arit_unit.io.ID_ESP := Cat(io.Deco_Instruc(11,10))//io.esp_ID
 	//arit_unit.io.c_out := io.out_COUT
 	//instanciar su salida al mux
 	
@@ -343,7 +343,7 @@ class ALU_2 extends Module {
 	logico_u.io.RST := io.RST
 	logico_u.io.in0 := io.op_1
 	logico_u.io.in1 := deco_ops.io.out
-	logico_u.io.ID_OP := io.op_ID
+	logico_u.io.ID_OP := Cat(io.Deco_Instruc(9,7))//io.op_ID
 	//instanciar su salida al mux
 	
 	//Instanciar Unidad Comparativa
@@ -353,21 +353,21 @@ class ALU_2 extends Module {
 	//comparar.io.in0_S := io.op_1
 	comparar.io.in1 := deco_ops.io.out
 	//comparar.io.in1_S := deco_ops.io.out_S
-	comparar.io.ID_OP := io.op_ID
+	comparar.io.ID_OP := Cat(io.Deco_Instruc(9,7))//io.op_ID
 	io.out_comp := comparar.io.flag_out 
 	
 	//Instanciar Deco de salidas
 	val deco_out = Module(new Deco_salida())
 	deco_out.io.RST := io.RST
-	deco_out.io.ID_imm := io.Imm_ID
-	deco_out.io.op_ID := io.op_ID
+	deco_out.io.ID_imm := Cat(io.Deco_Instruc(6,0))//io.Imm_ID
+	deco_out.io.op_ID := Cat(io.Deco_Instruc(9,7))//io.op_ID
 	//instanciar su salida al selector del mux
 	
 	//Instanciar unidad de desplazamiento
 	val desplazar = Module(new Shift ())
 	desplazar.io.RST := io.RST
 	desplazar.io.EN := deco_out.io.EN_Shift
-	desplazar.io.clk := io.clk
+	//desplazar.io.clk := io.clk
 	desplazar.io.in0 := io.op_1
 	desplazar.io.in1 := Cat(deco_ops.io.out(4,0))
 	//desplazar.io.in1(0) := deco_ops.io.out(0)
@@ -375,8 +375,8 @@ class ALU_2 extends Module {
 	//desplazar.io.in1(2) := deco_ops.io.out(2)
 	//desplazar.io.in1(3) := deco_ops.io.out(3)
 	//desplazar.io.in1(4) := deco_ops.io.out(4)
-	desplazar.io.ID_OP := io.op_ID
-	desplazar.io.ID_ESP := io.esp_ID
+	desplazar.io.ID_OP := Cat(io.Deco_Instruc(9,7))//io.op_ID
+	desplazar.io.ID_ESP := Cat(io.Deco_Instruc(11,10))//io.esp_ID
 	io.out_OK := desplazar.io.out_ready  
 	//instanciar su salida al mux
 	
